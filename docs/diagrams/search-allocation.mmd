@@ -1,0 +1,18 @@
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant A as Lottery API
+    participant R as Redis
+    participant P as PostgreSQL
+
+    U->>A: search 1****5, want 10 tickets
+    A->>A: validate, expand to matching numbers (10,000), shuffle
+    loop until 10 tickets or no numbers left (50 numbers per batch)
+        A->>R: take from the pools of this batch (atomic script)
+        R-->>A: ids taken (sold-out numbers skipped via bitmap)
+    end
+    A->>P: mark these ids reserved if still available
+    P-->>A: only the rows that changed
+    A-->>U: held tickets + hold expiry
+    U->>A: pay
+    A->>P: reserved → sold, with order and payment in one transaction

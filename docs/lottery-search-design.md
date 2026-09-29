@@ -26,21 +26,7 @@ A pattern with k wildcards matches 10^k numbers. That count drives the whole sea
 
 ## 2. Architecture
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#e8eaf6', 'primaryTextColor': '#1a1a2e', 'primaryBorderColor': '#5c6bc0', 'lineColor': '#8c9aad', 'textColor': '#8c9aad', 'edgeLabelBackground': '#e8eaf6', 'clusterBkg': 'transparent', 'clusterBorder': '#8c9aad', 'actorBkg': '#e8eaf6', 'actorBorder': '#5c6bc0', 'actorTextColor': '#1a1a2e', 'actorLineColor': '#8c9aad', 'signalColor': '#8c9aad', 'signalTextColor': '#8c9aad', 'labelBoxBkgColor': '#e8eaf6', 'labelTextColor': '#1a1a2e', 'loopTextColor': '#8c9aad', 'noteBkgColor': '#fff8e1', 'noteTextColor': '#1a1a2e', 'stateLabelColor': '#1a1a2e', 'transitionColor': '#8c9aad', 'transitionLabelColor': '#8c9aad'}}}%%
-flowchart TB
-    C([Client]) -->|pattern, limit| API[Lottery API<br/>stateless · scales horizontally]
-    API -->|1. take tickets atomically| R[(Redis<br/>available pool per number<br/>in-stock bitmap)]
-    API -->|2. record the hold| P[(PostgreSQL<br/>source of truth)]
-    subgraph JOBS[Background jobs]
-        S[Sweeper<br/>every minute]
-        X[Reconciler<br/>on startup · hourly]
-    end
-    P -.->|expired holds| S
-    P -.->|all available tickets| X
-    S -.->|return tickets to pools| R
-    X -.->|rebuild pools| R
-```
+![Architecture](diagrams/architecture.svg)
 
 | Component | Responsibility |
 |---|---|
@@ -76,39 +62,11 @@ flowchart TB
 
 ### Ticket lifecycle
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#e8eaf6', 'primaryTextColor': '#1a1a2e', 'primaryBorderColor': '#5c6bc0', 'lineColor': '#8c9aad', 'textColor': '#8c9aad', 'edgeLabelBackground': '#e8eaf6', 'clusterBkg': 'transparent', 'clusterBorder': '#8c9aad', 'actorBkg': '#e8eaf6', 'actorBorder': '#5c6bc0', 'actorTextColor': '#1a1a2e', 'actorLineColor': '#8c9aad', 'signalColor': '#8c9aad', 'signalTextColor': '#8c9aad', 'labelBoxBkgColor': '#e8eaf6', 'labelTextColor': '#1a1a2e', 'loopTextColor': '#8c9aad', 'noteBkgColor': '#fff8e1', 'noteTextColor': '#1a1a2e', 'stateLabelColor': '#1a1a2e', 'transitionColor': '#8c9aad', 'transitionLabelColor': '#8c9aad'}}}%%
-stateDiagram-v2
-    [*] --> available
-    available --> reserved: taken from a pool
-    reserved --> sold: paid within 10 minutes
-    reserved --> available: hold expired (Sweeper returns it)
-    sold --> [*]
-```
+![Ticket lifecycle](diagrams/ticket-lifecycle.svg)
 
 ## 4. Search and allocation
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#e8eaf6', 'primaryTextColor': '#1a1a2e', 'primaryBorderColor': '#5c6bc0', 'lineColor': '#8c9aad', 'textColor': '#8c9aad', 'edgeLabelBackground': '#e8eaf6', 'clusterBkg': 'transparent', 'clusterBorder': '#8c9aad', 'actorBkg': '#e8eaf6', 'actorBorder': '#5c6bc0', 'actorTextColor': '#1a1a2e', 'actorLineColor': '#8c9aad', 'signalColor': '#8c9aad', 'signalTextColor': '#8c9aad', 'labelBoxBkgColor': '#e8eaf6', 'labelTextColor': '#1a1a2e', 'loopTextColor': '#8c9aad', 'noteBkgColor': '#fff8e1', 'noteTextColor': '#1a1a2e', 'stateLabelColor': '#1a1a2e', 'transitionColor': '#8c9aad', 'transitionLabelColor': '#8c9aad'}}}%%
-sequenceDiagram
-    autonumber
-    actor U as User
-    participant A as Lottery API
-    participant R as Redis
-    participant P as PostgreSQL
-
-    U->>A: search 1****5, want 10 tickets
-    A->>A: validate, expand to matching numbers (10,000), shuffle
-    loop until 10 tickets or no numbers left (50 numbers per batch)
-        A->>R: take from the pools of this batch (atomic script)
-        R-->>A: ids taken (sold-out numbers skipped via bitmap)
-    end
-    A->>P: mark these ids reserved if still available
-    P-->>A: only the rows that changed
-    A-->>U: held tickets + hold expiry
-    U->>A: pay
-    A->>P: reserved → sold, with order and payment in one transaction
-```
+![Search and allocation](diagrams/search-allocation.svg)
 
 **Building the number sequence**
 - k ≤ 4 (at most 10,000 numbers): expand every number and shuffle in memory.
@@ -132,17 +90,7 @@ The shuffled order spreads users who search the same pattern across different po
 
 There are no locks: no lock per pattern (everyone queues behind one lock) and no lock per ticket (retry loops on every collision). Taking a ticket removes it from the pool in the same step, so there is no window for a collision and nobody waits for anybody.
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#e8eaf6', 'primaryTextColor': '#1a1a2e', 'primaryBorderColor': '#5c6bc0', 'lineColor': '#8c9aad', 'textColor': '#8c9aad', 'edgeLabelBackground': '#e8eaf6', 'clusterBkg': 'transparent', 'clusterBorder': '#8c9aad', 'actorBkg': '#e8eaf6', 'actorBorder': '#5c6bc0', 'actorTextColor': '#1a1a2e', 'actorLineColor': '#8c9aad', 'signalColor': '#8c9aad', 'signalTextColor': '#8c9aad', 'labelBoxBkgColor': '#e8eaf6', 'labelTextColor': '#1a1a2e', 'loopTextColor': '#8c9aad', 'noteBkgColor': '#fff8e1', 'noteTextColor': '#1a1a2e', 'stateLabelColor': '#1a1a2e', 'transitionColor': '#8c9aad', 'transitionLabelColor': '#8c9aad'}}}%%
-sequenceDiagram
-    participant A as User A
-    participant B as User B
-    participant R as Pool of 123405 [88, 91, 93]
-    A->>R: take
-    R-->>A: 88, left [91, 93]
-    B->>R: take
-    R-->>B: 91, left [93]
-```
+![Two users taking from the same pool](diagrams/concurrent-take.svg)
 
 **Fallback.** Without Redis, the API searches PostgreSQL through the per-digit indexes and locks the rows it takes, skipping rows someone else has locked (`SKIP LOCKED`). Concurrent requests get different rows without waiting on each other. Slower than the main path, equally correct.
 

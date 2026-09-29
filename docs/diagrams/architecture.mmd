@@ -1,0 +1,12 @@
+flowchart TB
+    C([Client]) -->|pattern, limit| API[Lottery API<br/>stateless · scales horizontally]
+    API -->|1. take tickets atomically| R[(Redis<br/>available pool per number<br/>in-stock bitmap)]
+    API -->|2. record the hold| P[(PostgreSQL<br/>source of truth)]
+    subgraph JOBS[Background jobs]
+        S[Sweeper<br/>every minute]
+        X[Reconciler<br/>on startup · hourly]
+    end
+    S -.->|return expired holds| R
+    S -.->|find expired holds| P
+    X -.->|rebuild pools| R
+    X -.->|read available tickets| P

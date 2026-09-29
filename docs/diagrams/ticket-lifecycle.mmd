@@ -1,0 +1,7 @@
+stateDiagram-v2
+    direction LR
+    [*] --> available
+    available --> reserved: taken from a pool
+    reserved --> sold: paid within 10 minutes
+    reserved --> available: hold expired
+    sold --> [*]

@@ -1,0 +1,8 @@
+sequenceDiagram
+    participant A as User A
+    participant R as Pool of 123405 [88, 91, 93]
+    participant B as User B
+    A->>R: take
+    R-->>A: 88, left [91, 93]
+    B->>R: take
+    R-->>B: 91, left [93]
