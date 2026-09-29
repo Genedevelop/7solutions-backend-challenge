@@ -22,7 +22,7 @@ services:
       HTTP_ADDR: ":8080"
       MONGO_URI: mongodb://mongo:27017
       MONGO_DB: ${MONGO_DB:-user_api}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required, see README}
+      JWT_SECRET: ${JWT_SECRET:-}
       JWT_ISSUER: ${JWT_ISSUER:-user-api}
       JWT_TTL: ${JWT_TTL:-1h}
       LOG_LEVEL: ${LOG_LEVEL:-info}
