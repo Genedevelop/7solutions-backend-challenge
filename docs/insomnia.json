@@ -1,0 +1,193 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_source": "openapi-to-insomnia.py",
+  "resources": [
+    {
+      "_id": "wrk_d244de7755dc4fce90c81cabd40330eb",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "User Management API v1.0.0",
+      "description": "Go user management API with MongoDB and JWT (HS256) authentication.",
+      "scope": "collection"
+    },
+    {
+      "_id": "req_fd0ae87649844006b1753c675f6602af",
+      "_type": "request",
+      "parentId": "wrk_d244de7755dc4fce90c81cabd40330eb",
+      "name": "Liveness probe",
+      "description": "",
+      "method": "GET",
+      "url": "{{baseUrl}}/healthz",
+      "headers": [],
+      "parameters": [],
+      "body": {},
+      "authentication": {},
+      "metaSortKey": -999999000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingEncodeUrl": true
+    },
+    {
+      "_id": "req_0ed0d1d4522c4f689736b056933b3590",
+      "_type": "request",
+      "parentId": "wrk_d244de7755dc4fce90c81cabd40330eb",
+      "name": "Register a new user, the only way to create one (public)",
+      "description": "",
+      "method": "POST",
+      "url": "{{baseUrl}}/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "disabled": false
+        }
+      ],
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Alice\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\"\n}"
+      },
+      "authentication": {},
+      "metaSortKey": -999998000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingEncodeUrl": true
+    },
+    {
+      "_id": "req_2a3f42b82b01428c99c6390950b50c0f",
+      "_type": "request",
+      "parentId": "wrk_d244de7755dc4fce90c81cabd40330eb",
+      "name": "Log in and receive a JWT",
+      "description": "",
+      "method": "POST",
+      "url": "{{baseUrl}}/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "disabled": false
+        }
+      ],
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\"\n}"
+      },
+      "authentication": {},
+      "metaSortKey": -999997000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingEncodeUrl": true
+    },
+    {
+      "_id": "req_53e3df711acb4521a5d84ee98422fc87",
+      "_type": "request",
+      "parentId": "wrk_d244de7755dc4fce90c81cabd40330eb",
+      "name": "List all users",
+      "description": "",
+      "method": "GET",
+      "url": "{{baseUrl}}/users",
+      "headers": [],
+      "parameters": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{token}}"
+      },
+      "metaSortKey": -999996000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingEncodeUrl": true
+    },
+    {
+      "_id": "req_e93fb5035a8044aa8d946b3fdd7eeb79",
+      "_type": "request",
+      "parentId": "wrk_d244de7755dc4fce90c81cabd40330eb",
+      "name": "Get a user by id",
+      "description": "",
+      "method": "GET",
+      "url": "{{baseUrl}}/users/{{id}}",
+      "headers": [],
+      "parameters": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{token}}"
+      },
+      "metaSortKey": -999995000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingEncodeUrl": true
+    },
+    {
+      "_id": "req_531740a5753349e7834bb7d582779bfa",
+      "_type": "request",
+      "parentId": "wrk_d244de7755dc4fce90c81cabd40330eb",
+      "name": "Update your own name and/or email",
+      "description": "",
+      "method": "PATCH",
+      "url": "{{baseUrl}}/users/{{id}}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "disabled": false
+        }
+      ],
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Alice Cooper\",\n  \"email\": \"alice.cooper@example.com\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{token}}"
+      },
+      "metaSortKey": -999994000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingEncodeUrl": true
+    },
+    {
+      "_id": "req_cc0d2a24f35b4f0fae6d6800d2c9e9ce",
+      "_type": "request",
+      "parentId": "wrk_d244de7755dc4fce90c81cabd40330eb",
+      "name": "Delete your own account",
+      "description": "",
+      "method": "DELETE",
+      "url": "{{baseUrl}}/users/{{id}}",
+      "headers": [],
+      "parameters": [],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{token}}"
+      },
+      "metaSortKey": -999993000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingEncodeUrl": true
+    },
+    {
+      "_id": "env_9587e9fbf9ce4bc7aa9f118aaabda146",
+      "_type": "environment",
+      "parentId": "wrk_d244de7755dc4fce90c81cabd40330eb",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "",
+        "id": "",
+        "token": ""
+      },
+      "isPrivate": false,
+      "metaSortKey": 0
+    }
+  ]
+}

@@ -1,0 +1,322 @@
+openapi: 3.0.3
+info:
+  title: User Management API
+  version: 1.0.0
+  description: Go user management API with MongoDB and JWT (HS256) authentication.
+servers:
+  - url: http://localhost:8080
+    description: make up, or make dev with the default HTTP_ADDR
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: health
+  - name: auth
+  - name: users
+
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Liveness probe
+      operationId: healthz
+      security: []
+      responses:
+        "200":
+          description: Server is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register a new user, the only way to create one (public)
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ValidationFailed"
+        "409":
+          $ref: "#/components/responses/EmailTaken"
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Log in and receive a JWT
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Access token issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          $ref: "#/components/responses/InvalidJSON"
+        "401":
+          description: Wrong email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: INVALID_CREDENTIALS
+                message: invalid email or password
+
+  /users:
+    get:
+      tags: [users]
+      summary: List all users
+      operationId: listUsers
+      responses:
+        "200":
+          description: Every user, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: User id (MongoDB ObjectID hex)
+        schema:
+          type: string
+          example: 66f9a1c2e4b0a1b2c3d4e5f6
+    get:
+      tags: [users]
+      summary: Get a user by id
+      operationId: getUser
+      responses:
+        "200":
+          description: The user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+    patch:
+      tags: [users]
+      summary: Update your own name and/or email
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ValidationFailed"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+        "409":
+          $ref: "#/components/responses/EmailTaken"
+    delete:
+      tags: [users]
+      summary: Delete your own account
+      operationId: deleteUser
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CreateUserRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Alice
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+          example: password123
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        password:
+          type: string
+          example: password123
+
+    UpdateUserRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Alice Cooper
+        email:
+          type: string
+          format: email
+          example: alice.cooper@example.com
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 66f9a1c2e4b0a1b2c3d4e5f6
+        name:
+          type: string
+          example: Alice
+        email:
+          type: string
+          example: alice@example.com
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-09-30T02:10:00.000Z"
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+
+  responses:
+    ValidationFailed:
+      description: Invalid input, every failing field is listed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: VALIDATION_FAILED
+            message: validation failed
+            fields:
+              email: must be a valid email address
+              password: must be at least 8 characters
+    InvalidJSON:
+      description: Body is not valid JSON
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: INVALID_JSON
+            message: request body must be valid JSON
+    Unauthorized:
+      description: Missing, invalid or expired bearer token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: MISSING_TOKEN
+            message: missing bearer token
+    Forbidden:
+      description: Trying to change another user's account
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: FORBIDDEN
+            message: cannot modify another user
+    UserNotFound:
+      description: No user with that id
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: USER_NOT_FOUND
+            message: user not found
+    EmailTaken:
+      description: Email already registered
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: EMAIL_TAKEN
+            message: email already registered

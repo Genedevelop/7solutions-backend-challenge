@@ -1,0 +1,23 @@
+# Version control
+.git/
+
+# Build output
+bin/
+tmp/
+
+# Environment files
+.env
+.env.*
+
+# Test and coverage
+coverage.out
+
+# Docs and local tooling
+*.md
+docs/
+.DS_Store
+
+# Container and build config
+Dockerfile
+docker-compose.yml
+Makefile

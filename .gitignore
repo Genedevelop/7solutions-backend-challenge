@@ -1,0 +1,16 @@
+# Build output
+/bin/
+/tmp/
+
+# Test and coverage
+coverage.out
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS and editor
+.DS_Store
+.idea/
+.vscode/
